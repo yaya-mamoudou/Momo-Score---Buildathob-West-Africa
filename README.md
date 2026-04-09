@@ -1,20 +1,48 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# MoMoScore 🚀
 
-# Run and deploy your AI Studio app
+**Turn mobile money activity into an explainable trust signal.**
 
-This contains everything you need to run your app locally.
+MoMoScore is a financial identity platform designed for informal workers who lack formal credit history. By analyzing mobile money transaction messages (SMS/Chat), the app generates a deterministic trust score and provides AI-powered financial insights to help users access formal credit and opportunities.
 
-View your app in AI Studio: https://ai.studio/apps/4e76e217-decb-4170-8f25-2e86c32fcf0c
+## 🌐 Live Demo
+[View Live Application](https://ais-dev-t64x4sds7uukqtm2y7kljs-544634115319.europe-west2.run.app)
 
-## Run Locally
+## ✨ Key Features
+- **Transaction Parser**: Extracts structured data from mock mobile money SMS/chat messages.
+- **Trust Scoring Engine**: Calculates a 0-100 score based on 16+ financial metrics (consistency, savings, bill payments, etc.).
+- **AI-Powered Insights**: Uses Gemini AI to explain financial behavior, highlighting strengths, risks, and actionable recommendations.
+- **Privacy First**: Analysis is performed on the data provided, with no external database requirements for the core scoring logic.
+- **Demo Mode**: Built-in sample profiles (Market Trader, Taxi Driver, Food Vendor) for quick testing.
+- **Persistent History**: Locally stored analysis history for easy comparison.
 
-**Prerequisites:**  Node.js
+## 🛠️ Tech Stack
+- **Frontend**: React, Vite, Tailwind CSS, Motion (for animations), Lucide React (icons).
+- **Backend**: Express (serving the SPA).
+- **AI**: Google Gemini API via `@google/genai`.
 
+## 🚀 Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+- Node.js installed.
+- A Gemini API Key (configured in environment variables).
+
+### Installation
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up your `.env` file with your `GEMINI_API_KEY`.
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 📝 Mock Data Format
+The app expects messages in the following format:
+- `You have received 25000 XAF from Linda on 2026-04-01 at 09:42.`
+- `You sent 8000 XAF to Paul on 2026-04-01 at 13:10.`
+- `You paid 4500 XAF to ENEO on 2026-04-02 at 08:15.`
+
+---
+*Built for the Financial Inclusion Hackathon.*
