@@ -1,29 +1,40 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { TrustScoreResult } from "./types";
+import { TrustScoreResult, FinancialMetrics } from "./types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function generateExplanation(result: TrustScoreResult): Promise<TrustScoreResult['explanation']> {
+  const { score, rating, metrics } = result;
+  
   const prompt = `
-    Analyze the following financial data for an informal worker and provide a professional, encouraging explanation of their MoMoScore (Mobile Money Trust Score).
-    
-    Score: ${result.score}/100 (${result.rating})
-    Total Inflow: XAF ${result.metrics.totalInflow}
-    Total Outflow: XAF ${result.metrics.totalOutflow}
-    Transaction Count: ${result.metrics.transactionCount}
-    Active Days: ${result.metrics.activeDays}
-    Bill Payments: ${result.metrics.billPaymentCount}
-    Savings Transactions: ${result.metrics.savingsCount}
-    Cash Out Transactions: ${result.metrics.cashOutCount}
-    Consistency Level: ${result.metrics.activityConsistencyLevel}
-    Inflow/Outflow Ratio: ${result.metrics.inflowOutflowRatio.toFixed(2)}
+    Analyze the financial behavior of an informal worker based on the following data:
+    - Trust Score: ${score}/100
+    - Trust Band: ${rating}
+    - Total Inflow: XAF ${metrics.totalInflow}
+    - Total Outflow: XAF ${metrics.totalOutflow}
+    - Transaction Count: ${metrics.transactionCount}
+    - Active Days: ${metrics.activeDays}
+    - Bill Payments: ${metrics.billPaymentCount}
+    - Savings Transactions: ${metrics.savingsCount}
+    - Cash Out Transactions: ${metrics.cashOutCount}
+    - Consistency Level: ${metrics.activityConsistencyLevel}
+    - Inflow/Outflow Ratio: ${metrics.inflowOutflowRatio.toFixed(2)}
 
-    Provide the response in JSON format with the following structure:
+    Instructions:
+    1. Provide a professional, practical, and non-judgmental explanation.
+    2. Do not claim this is an official credit score.
+    3. Do not mention banks unless necessary.
+    4. Do not invent facts not present in the input.
+    5. Focus on financial consistency, inflow patterns, spending behavior, bill payment behavior, and savings signals.
+    6. Use plain language suitable for a hackathon demo in Africa.
+    7. Output valid JSON only.
+
+    Response Schema:
     {
-      "summary": "A 2-3 sentence overview of their financial health.",
-      "strengths": ["List 2-3 specific financial strengths based on the data."],
-      "risks": ["List 1-2 potential risks or areas for improvement."],
-      "recommendations": ["List 2-3 actionable steps to improve their score."]
+      "summary": "One short paragraph summarizing their financial health.",
+      "strengths": ["2 to 4 specific financial strengths."],
+      "risks": ["2 to 4 potential risks or areas for improvement."],
+      "recommendations": ["Exactly 3 concise actionable items."]
     }
   `;
 
@@ -37,9 +48,24 @@ export async function generateExplanation(result: TrustScoreResult): Promise<Tru
           type: Type.OBJECT,
           properties: {
             summary: { type: Type.STRING },
-            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-            risks: { type: Type.ARRAY, items: { type: Type.STRING } },
-            recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+            strengths: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              minItems: 2,
+              maxItems: 4
+            },
+            risks: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              minItems: 2,
+              maxItems: 4
+            },
+            recommendations: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              minItems: 3,
+              maxItems: 3
+            }
           },
           required: ["summary", "strengths", "risks", "recommendations"]
         }
@@ -51,11 +77,40 @@ export async function generateExplanation(result: TrustScoreResult): Promise<Tru
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini Error:", error);
-    return {
-      summary: "We analyzed your mobile money activity to determine your financial trust score. Your score reflects your transaction volume and consistency.",
-      strengths: ["Active mobile money usage", "Regular incoming payments"],
-      risks: ["Limited transaction history"],
-      recommendations: ["Continue using mobile money for business", "Maintain a positive net balance"]
-    };
+    return getFallbackExplanation(metrics, score, rating);
   }
+}
+
+function getFallbackExplanation(metrics: FinancialMetrics, score: number, rating: string): TrustScoreResult['explanation'] {
+  const strengths = [];
+  if (metrics.savingsCount > 0) strengths.push("Demonstrates a habit of saving money regularly.");
+  if (metrics.billPaymentCount > 0) strengths.push("Shows reliability by paying utility bills through mobile money.");
+  if (metrics.activityConsistencyLevel === "high") strengths.push("Maintains a very consistent daily transaction pattern.");
+  if (metrics.totalInflow > metrics.totalOutflow) strengths.push("Maintains a positive cash flow with more money coming in than going out.");
+  
+  if (strengths.length < 2) {
+    strengths.push("Active user of mobile money services.");
+    strengths.push("Digital footprint established through regular transactions.");
+  }
+
+  const risks = [];
+  if (metrics.cashOutCount >= 4) risks.push("High frequency of cash-outs may indicate limited digital ecosystem usage.");
+  if (metrics.inflowOutflowRatio < 0.9) risks.push("Spending is very close to or exceeds total income.");
+  if (metrics.activeDays < 3) risks.push("Limited transaction history over the analyzed period.");
+  
+  if (risks.length < 2) {
+    risks.push("Vulnerability to unexpected financial shocks.");
+    risks.push("Potential for improved expense tracking.");
+  }
+
+  return {
+    summary: `Your MoMoScore of ${score} places you in the ${rating} trust band. This analysis is based on your recent mobile money activity, focusing on how you manage inflows, outflows, and savings.`,
+    strengths: strengths.slice(0, 4),
+    risks: risks.slice(0, 4),
+    recommendations: [
+      "Try to keep a small balance in your mobile money wallet instead of cashing out everything.",
+      "Continue making regular bill payments to build a stronger reliability record.",
+      "Increase the frequency of your transfers to your savings pocket to boost your score."
+    ]
+  };
 }

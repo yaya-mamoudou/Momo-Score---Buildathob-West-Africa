@@ -15,7 +15,8 @@ import {
   Loader2, 
   FileText,
   User,
-  Zap
+  Zap,
+  RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SAMPLE_PROFILES } from './lib/mockData';
@@ -26,12 +27,14 @@ import { TrustScoreResult } from './lib/types';
 export default function App() {
   const [inputText, setInputText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [result, setResult] = useState<TrustScoreResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProfileLabel, setSelectedProfileLabel] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!inputText.trim()) {
-      setError('Please enter some transaction messages or select a sample profile.');
+      setError('Please enter some transaction messages or select a sample profile to begin analysis.');
       return;
     }
 
@@ -39,26 +42,27 @@ export default function App() {
     setError(null);
 
     try {
-      // 1. Parse
+      setLoadingStep('Parsing transaction messages...');
+      await new Promise(resolve => setTimeout(resolve, 800));
       const transactions = parseTransactions(inputText);
+      
       if (transactions.length === 0) {
-        throw new Error('No valid transactions found in the text. Please check the format.');
+        throw new Error('No valid transactions found. Please check the format of your messages.');
       }
 
-      // 2. Metrics
+      setLoadingStep('Calculating financial metrics...');
+      await new Promise(resolve => setTimeout(resolve, 800));
       const metrics = calculateMetrics(transactions);
-
-      // 3. Score
       const { score, rating } = computeTrustScore(metrics);
 
+      setLoadingStep('Generating AI explanation...');
       const partialResult: TrustScoreResult = {
         score,
         rating,
         metrics,
-        transactions
+        transactions,
       };
 
-      // 4. Gemini Explanation
       const explanation = await generateExplanation(partialResult);
       
       setResult({
@@ -75,30 +79,49 @@ export default function App() {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setIsAnalyzing(false);
+      setLoadingStep('');
     }
+  };
+
+  const handleReset = () => {
+    setInputText('');
+    setResult(null);
+    setError(null);
+    setSelectedProfileLabel(null);
   };
 
   const loadSample = (profileKey: keyof typeof SAMPLE_PROFILES) => {
     setInputText(SAMPLE_PROFILES[profileKey]);
     setResult(null);
     setError(null);
+    const labels = {
+      marketTrader: 'Market Trader (Strong Profile)',
+      taxiDriver: 'Taxi Driver (Moderate Profile)',
+      foodVendor: 'Food Vendor (Weak Profile)'
+    };
+    setSelectedProfileLabel(labels[profileKey]);
   };
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-gray-100 font-sans selection:bg-emerald-500/30">
       {/* Header */}
       <header className="border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="text-black w-5 h-5" />
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                <ShieldCheck className="text-black w-5 h-5" />
+              </div>
+              <span className="text-2xl font-bold tracking-tighter">MoMoScore</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">MoMoScore</span>
+            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-widest mt-0.5 hidden sm:block">
+              Turn mobile money activity into an explainable trust signal
+            </span>
           </div>
           <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
             <a href="#" className="hover:text-white transition-colors">How it works</a>
             <a href="#" className="hover:text-white transition-colors">For Lenders</a>
-            <button className="bg-white text-black px-4 py-1.5 rounded-full font-medium hover:bg-gray-200 transition-colors">
+            <button className="bg-white text-black px-5 py-2 rounded-full font-bold hover:bg-emerald-500 transition-all">
               Get Started
             </button>
           </div>
@@ -120,6 +143,23 @@ export default function App() {
               We convert your mobile money transaction history into a powerful financial identity, 
               helping informal workers access formal credit and opportunities.
             </p>
+
+            {/* Step Flow */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 max-w-2xl mx-auto">
+              {[
+                { step: 1, label: "Paste messages" },
+                { step: 2, label: "Extract data" },
+                { step: 3, label: "Score behavior" },
+                { step: 4, label: "View insights" }
+              ].map((s) => (
+                <div key={s.step} className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-emerald-500">
+                    {s.step}
+                  </div>
+                  <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">{s.label}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </section>
 
@@ -130,36 +170,61 @@ export default function App() {
             animate={{ opacity: 1, x: 0 }}
             className="bg-[#141417] border border-white/5 rounded-3xl p-8"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <FileText className="text-emerald-500 w-6 h-6" />
-              <h2 className="text-xl font-semibold">Input Transactions</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <FileText className="text-emerald-500 w-6 h-6" />
+                <div>
+                  <h2 className="text-xl font-semibold">Input Transactions</h2>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Demo uses mock SMS data only</p>
+                </div>
+              </div>
+              {inputText && (
+                <button 
+                  onClick={handleReset}
+                  className="text-xs text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+              )}
             </div>
             
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <button 
-                  onClick={() => loadSample('marketTrader')}
-                  className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
-                >
-                  <User className="w-3 h-3" /> Market Trader
-                </button>
-                <button 
-                  onClick={() => loadSample('taxiDriver')}
-                  className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
-                >
-                  <Zap className="w-3 h-3" /> Taxi Driver
-                </button>
-                <button 
-                  onClick={() => loadSample('foodVendor')}
-                  className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
-                >
-                  <PieChart className="w-3 h-3" /> Food Vendor
-                </button>
+              <div className="flex flex-col gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Quick Test Samples</span>
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    onClick={() => loadSample('marketTrader')}
+                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                  >
+                    <User className="w-3 h-3" /> Market Trader
+                  </button>
+                  <button 
+                    onClick={() => loadSample('taxiDriver')}
+                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                  >
+                    <Zap className="w-3 h-3" /> Taxi Driver
+                  </button>
+                  <button 
+                    onClick={() => loadSample('foodVendor')}
+                    className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                  >
+                    <PieChart className="w-3 h-3" /> Food Vendor
+                  </button>
+                </div>
               </div>
+
+              {selectedProfileLabel && (
+                <div className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-3 py-1 rounded-md inline-block">
+                  Selected: {selectedProfileLabel}
+                </div>
+              )}
 
               <textarea
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  setSelectedProfileLabel(null);
+                }}
                 placeholder="Paste your mobile money SMS messages here..."
                 className="w-full h-64 bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all resize-none"
               />
@@ -174,12 +239,12 @@ export default function App() {
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
-                className="w-full py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg"
+                className="w-full py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-emerald-500/20"
               >
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Analyzing Data...
+                    {loadingStep}
                   </>
                 ) : (
                   <>
