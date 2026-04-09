@@ -127,63 +127,64 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-gray-100 font-sans selection:bg-emerald-500/30">
       {/* Header */}
-      <header className="border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-                <ShieldCheck className="text-black w-5 h-5" />
+      {!result && (
+        <header className="border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
+                  <ShieldCheck className="text-black w-4 h-4" />
+                </div>
+                <span className="text-lg font-bold tracking-tighter">MoMoScore</span>
               </div>
-              <span className="text-xl font-bold tracking-tighter">MoMoScore</span>
             </div>
-            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-widest mt-0.5 hidden sm:block">
-              Turn mobile money activity into an explainable trust signal
-            </span>
+            <div className="hidden sm:flex items-center gap-6 text-xs text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">How it works</a>
+              <a href="#" className="hover:text-white transition-colors">For Lenders</a>
+              <button className="bg-white text-black px-4 py-1.5 rounded-full font-bold hover:bg-emerald-500 transition-all">
+                Get Started
+              </button>
+            </div>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-gray-400">
-            <a href="#" className="hover:text-white transition-colors">How it works</a>
-            <a href="#" className="hover:text-white transition-colors">For Lenders</a>
-            <button className="bg-white text-black px-5 py-2 rounded-full font-bold hover:bg-emerald-500 transition-all">
-              Get Started
-            </button>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 py-12">
         {/* Hero Section */}
-        <section className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-              Unlock Financial Trust with <span className="text-emerald-500">MoMoScore</span>
-            </h1>
-            <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              We convert your mobile money transaction history into a powerful financial identity, 
-              helping informal workers access formal credit and opportunities.
-            </p>
+        {!result && (
+          <section className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+                Unlock Financial Trust with <span className="text-emerald-500">MoMoScore</span>
+              </h1>
+              <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                We convert your mobile money transaction history into a powerful financial identity, 
+                helping informal workers access formal credit and opportunities.
+              </p>
 
-            {/* Step Flow */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 max-w-2xl mx-auto">
-              {[
-                { step: 1, label: "Paste messages" },
-                { step: 2, label: "Extract data" },
-                { step: 3, label: "Score behavior" },
-                { step: 4, label: "View insights" }
-              ].map((s) => (
-                <div key={s.step} className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-emerald-500">
-                    {s.step}
+              {/* Step Flow */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 max-w-2xl mx-auto">
+                {[
+                  { step: 1, label: "Paste messages" },
+                  { step: 2, label: "Extract data" },
+                  { step: 3, label: "Score behavior" },
+                  { step: 4, label: "View insights" }
+                ].map((s) => (
+                  <div key={s.step} className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-emerald-500">
+                      {s.step}
+                    </div>
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">{s.label}</span>
                   </div>
-                  <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </section>
+                ))}
+              </div>
+            </motion.div>
+          </section>
+        )}
 
         {/* Input Section */}
         <AnimatePresence mode="wait">
@@ -288,6 +289,40 @@ export default function App() {
                   </button>
                 </div>
               </div>
+
+              {history.length > 0 && (
+                <div className="flex flex-col gap-4 mb-8">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                      <History className="w-4 h-4 text-emerald-500" /> Recent Analysis History
+                    </span>
+                    <span className="text-[10px] text-gray-600">{history.length} saved reports</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {history.map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setResult(h);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-[#141417]/50 border border-white/5 rounded-2xl p-4 text-left hover:border-emerald-500/50 transition-all group"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-sm font-bold ${
+                            h.rating === 'Strong' ? 'text-emerald-500' : 
+                            h.rating === 'Moderate' ? 'text-yellow-500' : 'text-red-500'
+                          }`}>{h.score}</span>
+                          <span className="text-[8px] text-gray-600 uppercase font-bold">{h.transactions[0].date}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 line-clamp-2 italic leading-relaxed">
+                          "{h.explanation?.summary}"
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="bg-[#141417] border border-white/5 rounded-3xl p-8">
@@ -485,42 +520,6 @@ export default function App() {
             </motion.section>
           )}
         </AnimatePresence>
-
-        {/* History Section */}
-        {history.length > 0 && (
-          <section className="max-w-4xl mx-auto mt-20 pt-20 border-t border-white/5">
-            <div className="flex items-center gap-2 mb-8">
-              <History className="text-emerald-500 w-5 h-5" />
-              <h2 className="text-xl font-semibold">Recent Analysis History</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {history.map((h, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setResult(h);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="bg-[#141417] border border-white/5 rounded-2xl p-5 text-left hover:border-emerald-500/50 transition-all group"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">{h.transactions[0].date}</span>
-                    <span className={`text-xs font-bold ${
-                      h.rating === 'Strong' ? 'text-emerald-500' : 
-                      h.rating === 'Moderate' ? 'text-yellow-500' : 'text-red-500'
-                    }`}>{h.score}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 italic mb-3">
-                    "{h.explanation?.summary}"
-                  </p>
-                  <div className="text-[10px] font-bold text-emerald-500 uppercase flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    View Report <ArrowUpRight className="w-3 h-3" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
       </main>
 
       {/* Footer */}
