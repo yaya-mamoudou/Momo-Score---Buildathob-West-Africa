@@ -1,0 +1,5 @@
+{
+  "name": "MoMoScore",
+  "description": "Financial trust scoring for informal workers using mobile money transaction analysis.",
+  "requestFramePermissions": []
+}
