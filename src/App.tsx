@@ -34,6 +34,23 @@ export default function App() {
   const [selectedProfileLabel, setSelectedProfileLabel] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
+  // Load history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('momo_history');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to parse history', e);
+      }
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('momo_history', JSON.stringify(history));
+  }, [history]);
+
   const handleAnalyze = async () => {
     if (!inputText.trim()) {
       setError('Please enter some transaction messages or select a sample profile to begin analysis.');
@@ -198,8 +215,15 @@ export default function App() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex flex-col gap-3">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Quick Test Samples</span>
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        <span className="text-emerald-500 font-bold">How to start:</span> Paste your mobile money SMS messages in the box below, or click one of the <span className="text-emerald-500">test samples</span> to see how the scoring works.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Quick Test Samples</span>
                     <div className="flex flex-wrap gap-2">
                       <button 
                         onClick={() => loadSample('marketTrader')}
@@ -221,7 +245,7 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-
+                </div>
                   {selectedProfileLabel && (
                     <div className="text-xs text-emerald-500 font-medium bg-emerald-500/10 px-3 py-1 rounded-md inline-block">
                       Selected: {selectedProfileLabel}
